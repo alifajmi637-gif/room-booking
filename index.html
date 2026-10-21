@@ -14,6 +14,7 @@
   <header>
     <h1>Room Booking</h1>
     <div id="who" hidden>
+      <a id="admin-link" href="admin.html" hidden>Admin panel</a>
       <span id="who-email"></span>
       <button id="sign-out" type="button" class="link">Sign out</button>
     </div>
@@ -63,52 +64,11 @@
       <h2>My upcoming bookings</h2>
       <ul id="mine" class="list"></ul>
     </section>
-
-    <!-- Only shown to admins. The database enforces admin rights on every action;
-         hiding this panel is just tidiness, not security. -->
-    <section id="admin" hidden>
-      <h2 class="admin-title">Admin</h2>
-
-      <h3>Rooms</h3>
-      <div id="admin-rooms"></div>
-      <form id="room-form" class="inline" novalidate>
-        <input id="room-name" placeholder="New room name" maxlength="60" required>
-        <input id="room-capacity" type="number" min="1" max="500" placeholder="Capacity" required>
-        <button type="submit">Add room</button>
-      </form>
-
-      <h3>Booking rules</h3>
-      <form id="rules-form" novalidate>
-        <label for="rule-tz">Timezone (e.g. Asia/Kuala_Lumpur)</label>
-        <input id="rule-tz" maxlength="64" required>
-        <label for="rule-open">Opens at (hour, 0–23)</label>
-        <input id="rule-open" type="number" min="0" max="23" required>
-        <label for="rule-close">Closes at (hour, 1–24)</label>
-        <input id="rule-close" type="number" min="1" max="24" required>
-        <label for="rule-duration">Max booking length (minutes, multiple of 15)</label>
-        <input id="rule-duration" type="number" min="15" max="1440" step="15" required>
-        <label for="rule-ahead">How far ahead people can book (days)</label>
-        <input id="rule-ahead" type="number" min="1" max="365" required>
-        <label for="rule-cap">Max upcoming bookings per person</label>
-        <input id="rule-cap" type="number" min="1" max="500" required>
-        <p class="hint">Admins aren't bound by length, days-ahead or per-person limits. Opening hours apply to everyone.</p>
-        <button type="submit">Save rules</button>
-      </form>
-
-      <h3>Admins</h3>
-      <ul id="admin-list" class="list"></ul>
-      <form id="admin-form" class="inline" novalidate>
-        <input id="admin-email" type="email" placeholder="Email of a user who has signed in" maxlength="254" required>
-        <button type="submit">Make admin</button>
-      </form>
-
-      <h3>Recent activity</h3>
-      <ul id="audit" class="list audit"></ul>
-    </section>
   </main>
 
   <script src="vendor/supabase.js"></script>
   <script src="config.js"></script>
+  <script src="common.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

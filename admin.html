@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co wss://*.supabase.co; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex">
+  <title>Room Booking Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Room Booking <span class="badge">Admin</span></h1>
+    <div id="who" hidden>
+      <a href="./">Booking page</a>
+      <span id="who-email"></span>
+      <button id="sign-out" type="button" class="link">Sign out</button>
+    </div>
+  </header>
+
+  <main>
+    <p id="msg" role="status" hidden></p>
+
+    <section id="auth" hidden>
+      <h2>Admin sign in</h2>
+      <form id="login-form" novalidate>
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="username" maxlength="254" required>
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" maxlength="72" required>
+        <button type="submit">Sign in</button>
+      </form>
+    </section>
+
+    <section id="denied" hidden>
+      <h2>Admins only</h2>
+      <p>Your account isn't an admin. <a href="./">Go to the booking page</a>.</p>
+    </section>
+
+    <!-- Every action here is re-checked by the database; hiding it is just tidiness. -->
+    <section id="app" hidden>
+      <h2>All bookings</h2>
+      <div class="toolbar">
+        <label for="day">Date</label>
+        <input id="day" type="date">
+      </div>
+      <div id="schedule"></div>
+
+      <h2>Rooms</h2>
+      <div id="admin-rooms"></div>
+      <form id="room-form" class="inline" novalidate>
+        <input id="room-name" placeholder="New room name" maxlength="60" required>
+        <input id="room-capacity" type="number" min="1" max="500" placeholder="Capacity" required>
+        <button type="submit">Add room</button>
+      </form>
+
+      <h2>Booking rules</h2>
+      <form id="rules-form" novalidate>
+        <label for="rule-tz">Timezone (e.g. Asia/Kuala_Lumpur)</label>
+        <input id="rule-tz" maxlength="64" required>
+        <label for="rule-open">Opens at (hour, 0–23)</label>
+        <input id="rule-open" type="number" min="0" max="23" required>
+        <label for="rule-close">Closes at (hour, 1–24)</label>
+        <input id="rule-close" type="number" min="1" max="24" required>
+        <label for="rule-duration">Max booking length (minutes, multiple of 15)</label>
+        <input id="rule-duration" type="number" min="15" max="1440" step="15" required>
+        <label for="rule-ahead">How far ahead people can book (days)</label>
+        <input id="rule-ahead" type="number" min="1" max="365" required>
+        <label for="rule-cap">Max upcoming bookings per person</label>
+        <input id="rule-cap" type="number" min="1" max="500" required>
+        <button type="submit">Save rules</button>
+      </form>
+
+      <h2>Admins</h2>
+      <ul id="admin-list" class="list"></ul>
+      <form id="admin-form" class="inline" novalidate>
+        <input id="admin-email" type="email" placeholder="Email of an existing user" maxlength="254" required>
+        <button type="submit">Make admin</button>
+      </form>
+
+      <h2>Recent activity</h2>
+      <ul id="audit" class="list audit"></ul>
+    </section>
+  </main>
+
+  <script src="vendor/supabase.js"></script>
+  <script src="config.js"></script>
+  <script src="common.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

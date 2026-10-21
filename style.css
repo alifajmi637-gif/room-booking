@@ -64,10 +64,8 @@ button.link { background: none; color: var(--accent); padding: 0; margin: 0; }
 .who { color: var(--muted); font-size: 13px; }
 .row-actions { display: flex; gap: 12px; align-items: center; white-space: nowrap; }
 
-#admin { margin-top: 32px; padding-top: 8px; border-top: 2px solid var(--border); }
-.admin-title { font-size: 18px; }
-h3 { font-size: 15px; margin: 20px 0 8px; }
-.hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+a { color: var(--accent); }
+.badge { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--accent); color: #fff; vertical-align: middle; }
 form.inline { display: flex; flex-wrap: wrap; gap: 8px; max-width: none; margin-top: 8px; }
 form.inline input { flex: 1 1 160px; min-width: 0; }
 form.inline button { margin-top: 0; }
