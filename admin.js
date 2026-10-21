@@ -211,6 +211,39 @@
   });
 
   // ---------------------------------------------------------------------------
+  // Add a user (runs in the admin-create-user Edge Function, which holds the
+  // service key and re-checks that the caller is an admin)
+  // ---------------------------------------------------------------------------
+
+  $("user-generate").addEventListener("click", () => {
+    // No look-alike characters (0/O, 1/l/I), so it's easy to read out or type.
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+    const bytes = crypto.getRandomValues(new Uint32Array(14));
+    $("user-password").value = Array.from(bytes, (n) => chars[n % chars.length]).join("");
+  });
+
+  $("user-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const email = $("user-email").value.trim().toLowerCase();
+    const password = $("user-password").value;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showMsg("Enter a valid email address.", "error"); return; }
+    if (password.length < 8 || password.length > 72) { showMsg("Password must be 8–72 characters.", "error"); return; }
+    withBusy(e.submitter, async () => {
+      const { error } = await db.functions.invoke("admin-create-user", { body: { email, password } });
+      if (error) {
+        let message = "Couldn't create the user.";
+        try { message = (await error.context.json()).error || message; } catch { /* network or not deployed */ }
+        showMsg(message, "error");
+        return;
+      }
+      $("user-email").value = "";
+      $("user-password").value = "";
+      showMsg(`User ${email} created. They can sign in now.`, "ok");
+      await loadAudit();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // Activity log
   // ---------------------------------------------------------------------------
 
@@ -226,6 +259,7 @@
       case "rooms": return `${verb} room "${data.name || ""}"`;
       case "settings": return "changed booking rules";
       case "admins": return row.action === "INSERT" ? "added an admin" : "removed an admin";
+      case "users": return `created user ${data.email || ""}`;
       default: return `${verb} ${row.table_name}`;
     }
   }

@@ -201,3 +201,7 @@ button.tl-block:hover { filter: brightness(.95); }
 .tl-guide { position: absolute; top: 0; bottom: 0; z-index: 4; width: 1px; background: var(--text); pointer-events: none; }
 .tl-guide span { position: absolute; top: 2px; left: 4px; padding: 0 4px; border-radius: 3px; font-size: 10px;
   color: var(--bg); background: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Admin: add a user */
+.hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+button.secondary { background: none; color: var(--accent); border: 1px solid var(--accent); }
