@@ -10,7 +10,8 @@
 
   const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.APP_CONFIG;
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+    // PKCE: the emailed link only completes sign-in in the browser that asked for it.
+    auth: { flowType: "pkce", persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
   });
 
   const $ = (id) => document.getElementById(id);
@@ -19,7 +20,6 @@
   let isAdmin = false;
   let settings = null;
   let rooms = [];
-  let pendingEmail = "";
 
   // ---------------------------------------------------------------------------
   // Helpers. All user-controlled text goes through textContent, never innerHTML.
@@ -116,7 +116,7 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Auth (email one-time code)
+  // Auth (email one-time link)
   // ---------------------------------------------------------------------------
 
   $("email-form").addEventListener("submit", (e) => {
@@ -127,34 +127,14 @@
       return;
     }
     withBusy(e.submitter, async () => {
-      const { error } = await db.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+      const { error } = await db.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: true, emailRedirectTo: location.origin + location.pathname },
+      });
       // Same response whether or not the account exists (no user enumeration).
       if (error && error.status === 429) { showMsg(friendlyError(error), "error"); return; }
-      pendingEmail = email;
-      $("email-form").hidden = true;
-      $("code-form").hidden = false;
-      $("code").focus();
-      showMsg("If that address is allowed, a code is on its way.", "ok");
+      showMsg("If that address is allowed, a sign-in link is on its way. Open it in this browser.", "ok");
     });
-  });
-
-  $("code-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const token = $("code").value.trim();
-    if (!/^\d{6}$/.test(token)) { showMsg("Enter the 6-digit code.", "error"); return; }
-    withBusy(e.submitter, async () => {
-      const { error } = await db.auth.verifyOtp({ email: pendingEmail, token, type: "email" });
-      $("code").value = "";
-      if (error) { showMsg("That code is invalid or expired.", "error"); return; }
-      showMsg("");
-    });
-  });
-
-  $("code-back").addEventListener("click", () => {
-    pendingEmail = "";
-    $("code-form").hidden = true;
-    $("email-form").hidden = false;
-    showMsg("");
   });
 
   $("sign-out").addEventListener("click", async () => {
@@ -167,6 +147,8 @@
     const nextUser = session ? session.user : null;
     const changed = (nextUser && nextUser.id) !== (user && user.id);
     user = nextUser;
+    // Drop the one-time ?code= from the address bar once it has been used.
+    if (location.search) history.replaceState(null, "", location.pathname);
     if (event === "INITIAL_SESSION" || changed) setTimeout(render, 0);
   });
 
@@ -182,8 +164,6 @@
       isAdmin = false;
       $("admin").hidden = true;
       $("who-email").textContent = "";
-      $("email-form").hidden = false;
-      $("code-form").hidden = true;
       return;
     }
     $("who-email").textContent = user.email || "";

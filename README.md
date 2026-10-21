@@ -16,7 +16,7 @@ The browser is untrusted. Every rule is enforced by Postgres in [supabase/schema
 | Double booking (including races) | `EXCLUDE USING gist` constraint on room + time range |
 | Junk data | CHECK constraints on text, 15-min slots, no past bookings; opening hours, max length, days ahead and per-user cap come from admin-editable `settings` and are enforced in a trigger |
 | One user hoarding rooms | Per-user cap on upcoming bookings, serialised with an advisory lock |
-| Password leaks | No passwords: sign-in is by a one-time email code |
+| Password leaks | No passwords: sign-in is by a one-time email link (PKCE, so it only works in the browser that requested it) |
 | XSS | User text is rendered with `textContent` only. Strict CSP: no inline scripts, no third-party scripts |
 | Supply chain | supabase-js 2.45.4 is vendored in `vendor/`, not loaded from a CDN |
 | Clickjacking | Frame-busting check (GitHub Pages can't send `frame-ancestors`) |
@@ -29,11 +29,11 @@ The anon key in `config.js` is meant to be public. **Never** put the `service_ro
 
 1. Create a project at <https://supabase.com/dashboard>.
 2. **SQL Editor → New query**: paste all of `supabase/schema.sql` and click **Run**. Edit the seed rooms at the bottom first if you want.
-3. **Authentication → Emails → Magic Link template**: make the body contain the code, e.g. `Your sign-in code is {{ .Token }}`.
+3. Before sharing with colleagues: **Authentication → Emails → Set up SMTP**. The built-in sender only emails your Supabase team members.
 4. **Authentication → Sign In / Providers**:
    - Keep **Email** enabled and turn off every provider you don't use.
    - Optional but recommended: turn off **Allow new users to sign up**. Then add staff under **Authentication → Users → Invite**, and only they can sign in.
-5. **Authentication → URL Configuration**: set **Site URL** to your Pages URL, e.g. `https://<your-username>.github.io/room-booking/`.
+5. **Authentication → URL Configuration**: set **Site URL** to your Pages URL, e.g. `https://<your-username>.github.io/room-booking/`, and add it (plus `http://localhost:3000/` for local testing) under **Redirect URLs**.
 6. Optional: to restrict access to your company domain, uncomment the `company_only_*` policies in `schema.sql`, set your domain and run them.
 7. **Project Settings → API**: copy the **Project URL** and the **anon public** key into `config.js`.
 

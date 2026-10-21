@@ -22,19 +22,13 @@
   <main>
     <p id="msg" role="status" hidden></p>
 
-    <!-- Sign in: one-time code by email, no passwords to leak -->
+    <!-- Sign in: one-time link by email (PKCE), no passwords to leak -->
     <section id="auth" hidden>
       <h2>Sign in</h2>
       <form id="email-form" novalidate>
         <label for="email">Work email</label>
         <input id="email" type="email" autocomplete="email" maxlength="254" required>
-        <button type="submit">Send code</button>
-      </form>
-      <form id="code-form" novalidate hidden>
-        <label for="code">6-digit code from your email</label>
-        <input id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
-        <button type="submit">Sign in</button>
-        <button type="button" id="code-back" class="link">Use a different email</button>
+        <button type="submit">Email me a sign-in link</button>
       </form>
     </section>
 
