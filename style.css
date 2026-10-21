@@ -8,6 +8,11 @@
   --mine: #e6efff;
   --error: #b42318;
   --ok: #067647;
+  --booked: #fde4e1;
+  --booked-border: #f3b7b0;
+  --booked-text: #8a1c14;
+  --past: rgba(0, 0, 0, .06);
+  --hover: rgba(31, 95, 209, .07);
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -20,6 +25,11 @@
     --mine: #1f2c45;
     --error: #ff8a80;
     --ok: #6fdc9f;
+    --booked: #45272a;
+    --booked-border: #6e3a3e;
+    --booked-text: #ffb4ab;
+    --past: rgba(255, 255, 255, .05);
+    --hover: rgba(108, 156, 255, .09);
   }
 }
 
@@ -37,7 +47,7 @@ header {
 }
 h1 { font-size: 18px; margin: 0; }
 h2 { font-size: 16px; margin: 24px 0 8px; }
-main { max-width: 760px; margin: 0 auto; padding: 16px; }
+main { max-width: 1100px; margin: 0 auto; padding: 16px; }
 #who { display: flex; gap: 12px; align-items: center; color: var(--muted); font-size: 14px; }
 
 form { display: grid; gap: 6px; max-width: 420px; }
@@ -77,3 +87,52 @@ form.inline button { margin-top: 0; }
 .room-row button { margin-top: 0; }
 button.danger { background: none; color: var(--error); padding: 0; margin: 0; }
 .audit li { font-size: 13px; display: block; }
+
+/* Calendar + timeline */
+h2.first { margin-top: 0; }
+.schedule-wrap { display: grid; gap: 16px; margin-bottom: 8px; }
+@media (min-width: 900px) {
+  .schedule-wrap { grid-template-columns: 280px minmax(0, 1fr); align-items: start; }
+}
+
+.cal { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
+.cal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.cal-title { font-weight: 600; }
+.cal-nav { background: none; color: var(--text); margin: 0; padding: 2px 12px; font-size: 20px; line-height: 1; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+.cal-dow { font-size: 12px; color: var(--muted); padding: 4px 0; }
+.cal-day { background: none; color: var(--text); margin: 0; padding: 7px 0; border-radius: 6px; font-variant-numeric: tabular-nums; }
+.cal-day:hover:not(:disabled) { background: var(--hover); }
+.cal-day.today { box-shadow: inset 0 0 0 1px var(--accent); }
+.cal-day.selected { background: var(--accent); color: #fff; }
+.cal-day:disabled, .cal-nav:disabled { opacity: .3; cursor: default; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); margin: 0 0 8px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.legend .free { background: var(--card); border: 1px solid var(--border); }
+.legend .booked { background: var(--booked); border: 1px solid var(--booked-border); }
+.legend .yours { background: var(--accent); }
+
+.tl { overflow-x: auto; background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
+.tl-inner { min-width: 680px; }
+.tl-row { display: grid; grid-template-columns: 140px minmax(0, 1fr); border-top: 1px solid var(--border); }
+.tl-row.tl-head { border-top: none; }
+.tl-label { padding: 8px 10px; display: flex; flex-direction: column; justify-content: center; border-right: 1px solid var(--border); min-width: 0; }
+.tl-label strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-label small { color: var(--muted); font-size: 12px; }
+.tl-track { position: relative; min-height: 54px; background-image: linear-gradient(to right, var(--border) 1px, transparent 1px); }
+.tl-track.clickable { cursor: pointer; }
+.tl-track.clickable:hover { background-color: var(--hover); }
+.tl-hours { min-height: 30px; background-image: none; }
+.tl-hour { position: absolute; top: 8px; font-size: 11px; color: var(--muted); transform: translateX(-50%); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tl-hour:first-child { transform: none; padding-left: 3px; }
+.tl-hour:last-child { transform: translateX(-100%); padding-right: 3px; }
+.tl-past { position: absolute; top: 0; bottom: 0; left: 0; pointer-events: none;
+  background: repeating-linear-gradient(135deg, transparent 0 6px, var(--past) 6px 9px); }
+.tl-now { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--error); pointer-events: none; z-index: 2; }
+.tl-block { position: absolute; top: 6px; bottom: 6px; margin: 0; padding: 2px 6px; min-width: 4px;
+  border-radius: 6px; border: 1px solid var(--booked-border); background: var(--booked); color: var(--booked-text);
+  font-size: 12px; line-height: 1.3; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; z-index: 1; }
+button.tl-block { cursor: pointer; }
+button.tl-block:hover { filter: brightness(.95); }
+.tl-block.mine { background: var(--accent); border-color: var(--accent); color: #fff; }

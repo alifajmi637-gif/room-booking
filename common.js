@@ -112,6 +112,134 @@ window.App = (() => {
   const fmtStamp = (d) => d.toLocaleString([], { timeZone: tz(), day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
   // ---------------------------------------------------------------------------
+  // Month calendar. Dates are YYYY-MM-DD strings in the org timezone.
+  // ---------------------------------------------------------------------------
+
+  function createCalendar(container, onSelect) {
+    let opts = null;  // { value, min, max, today }
+    let view = null;  // [year, month]
+    const ym = (y, m) => `${y}-${String(m).padStart(2, "0")}`;
+
+    function render() {
+      const [y, m] = view;
+      const first = new Date(Date.UTC(y, m - 1, 1));
+      const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+      const lead = (first.getUTCDay() + 6) % 7;  // weeks start on Monday
+
+      const prev = button("‹", "cal-nav", () => { view = m === 1 ? [y - 1, 12] : [y, m - 1]; render(); });
+      const next = button("›", "cal-nav", () => { view = m === 12 ? [y + 1, 1] : [y, m + 1]; render(); });
+      prev.setAttribute("aria-label", "Previous month");
+      next.setAttribute("aria-label", "Next month");
+      if (opts.min && ym(y, m) <= opts.min.slice(0, 7)) prev.disabled = true;
+      if (opts.max && ym(y, m) >= opts.max.slice(0, 7)) next.disabled = true;
+      const head = el("div", null, "cal-head");
+      head.append(prev, el("span", first.toLocaleDateString([], { timeZone: "UTC", month: "long", year: "numeric" }), "cal-title"), next);
+
+      const grid = el("div", null, "cal-grid");
+      for (const w of ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]) grid.append(el("span", w, "cal-dow"));
+      for (let i = 0; i < lead; i++) grid.append(el("span"));
+      for (let d = 1; d <= daysInMonth; d++) {
+        const ymd = `${ym(y, m)}-${String(d).padStart(2, "0")}`;
+        const b = button(String(d), "cal-day", () => { opts.value = ymd; render(); onSelect(ymd); });
+        if ((opts.min && ymd < opts.min) || (opts.max && ymd > opts.max)) b.disabled = true;
+        if (ymd === opts.today) b.classList.add("today");
+        if (ymd === opts.value) { b.classList.add("selected"); b.setAttribute("aria-pressed", "true"); }
+        grid.append(b);
+      }
+      container.replaceChildren(head, grid);
+    }
+
+    return {
+      update(next) {
+        opts = next;
+        view = next.value.split("-").map(Number).slice(0, 2);
+        render();
+      },
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Day timeline: one row per room, opening hours across, bookings as blocks.
+  // describe(booking) -> { text, mine?, onClick? }; onFree(room, minutes) is
+  // called when an empty part of a row is clicked.
+  // ---------------------------------------------------------------------------
+
+  function renderTimeline(container, { rooms, bookings, ymd, describe, onFree }) {
+    const s = state.settings;
+    const [y, m, d] = ymd.split("-").map(Number);
+    const startMin = s.open_hour * 60;
+    const endMin = s.close_hour * 60;
+    const hours = s.close_hour - s.open_hour;
+    const winStart = zoned(y, m, d, startMin).getTime();
+    const winEnd = zoned(y, m, d, endMin).getTime();
+    const pct = (ms) => `${Math.min(100, Math.max(0, ((ms - winStart) / (winEnd - winStart)) * 100))}%`;
+    const now = Date.now();
+
+    const inner = el("div", null, "tl-inner");
+
+    const hourTrack = el("div", null, "tl-track tl-hours");
+    for (let h = s.open_hour; h <= s.close_hour; h++) {
+      const t = el("span", `${String(h % 24).padStart(2, "0")}:00`, "tl-hour");
+      t.style.left = pct(zoned(y, m, d, h * 60).getTime());
+      hourTrack.append(t);
+    }
+    const headRow = el("div", null, "tl-row tl-head");
+    headRow.append(el("div", null, "tl-label"), hourTrack);
+    inner.append(headRow);
+
+    for (const r of rooms) {
+      const label = el("div", null, "tl-label");
+      label.append(el("strong", r.name), el("small", `${r.capacity} people${r.is_active === false ? " · inactive" : ""}`));
+
+      const track = el("div", null, "tl-track");
+      track.style.backgroundSize = `${100 / hours}% 100%`;  // one gridline per hour
+
+      if (now > winStart) {
+        const past = el("div", null, "tl-past");
+        past.style.width = pct(now);
+        track.append(past);
+      }
+      if (now > winStart && now < winEnd) {
+        const line = el("div", null, "tl-now");
+        line.style.left = pct(now);
+        track.append(line);
+      }
+
+      for (const b of bookings) {
+        if (b.room_id !== r.id) continue;
+        const st = new Date(b.starts_at).getTime();
+        const en = new Date(b.ends_at).getTime();
+        if (en <= winStart || st >= winEnd) continue;
+        const info = describe(b);
+        const block = info.onClick ? button(info.text, "tl-block", info.onClick) : el("div", info.text, "tl-block");
+        if (info.mine) block.classList.add("mine");
+        block.title = `${fmtTime(new Date(st))}–${fmtTime(new Date(en))}  ${info.text}`;
+        block.style.left = pct(st);
+        block.style.width = `calc(${pct(en)} - ${pct(st)})`;
+        track.append(block);
+      }
+
+      if (onFree) {
+        track.classList.add("clickable");
+        track.addEventListener("click", (e) => {
+          if (e.target.closest(".tl-block")) return;
+          const rect = track.getBoundingClientRect();
+          const mins = startMin + Math.floor((((e.clientX - rect.left) / rect.width) * hours * 60) / 15) * 15;
+          onFree(r, Math.min(Math.max(mins, startMin), endMin - 15));
+        });
+      }
+
+      const row = el("div", null, "tl-row");
+      row.append(label, track);
+      inner.append(row);
+    }
+
+    const wrap = el("div", null, "tl");
+    wrap.append(inner);
+    container.replaceChildren(wrap);
+  }
+
+  // ---------------------------------------------------------------------------
   // Data shared by both pages
   // ---------------------------------------------------------------------------
 
@@ -202,6 +330,7 @@ window.App = (() => {
   return {
     db, $, state, el, button, showMsg, friendlyError, withBusy,
     zoned, ymdInTz, addDays, fmtTime, fmtDate, fmtStamp,
+    createCalendar, renderTimeline,
     loadSettings, isAdmin, loadDayBookings, cancelBooking, startAuth,
   };
 })();

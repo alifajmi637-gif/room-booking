@@ -36,13 +36,21 @@
     </section>
 
     <section id="app" hidden>
-      <div class="toolbar">
-        <label for="day">Date</label>
-        <input id="day" type="date">
+      <div class="schedule-wrap">
+        <div>
+          <input id="day" type="hidden">
+          <div id="calendar" class="cal"></div>
+        </div>
+        <div>
+          <h2 id="day-label" class="first">Schedule</h2>
+          <div class="legend">
+            <span><i class="free"></i>Free (click to book)</span>
+            <span><i class="booked"></i>Booked</span>
+            <span><i class="yours"></i>Yours (click to cancel)</span>
+          </div>
+          <div id="schedule"></div>
+        </div>
       </div>
-
-      <h2>Schedule</h2>
-      <div id="schedule"></div>
 
       <h2>Book a room</h2>
       <form id="book-form" novalidate>

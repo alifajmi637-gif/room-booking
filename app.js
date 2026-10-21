@@ -3,10 +3,14 @@
 // User page: see the schedule, book a room, cancel your own bookings.
 (() => {
   const { db, $, state, el, button, showMsg, friendlyError, withBusy,
-          zoned, ymdInTz, addDays, fmtTime, fmtDate, loadSettings, isAdmin,
-          loadDayBookings, cancelBooking, startAuth } = window.App;
+          zoned, ymdInTz, addDays, fmtTime, fmtDate, createCalendar, renderTimeline,
+          loadSettings, isAdmin, loadDayBookings, cancelBooking, startAuth } = window.App;
 
   let rooms = [];
+  const calendar = createCalendar($("calendar"), (ymd) => {
+    $("day").value = ymd;
+    loadSchedule();
+  });
 
   function minutesLabel(m) {
     const h = Math.floor(m / 60), r = m % 60;
@@ -44,6 +48,7 @@
     day.min = today;
     day.max = addDays(today, s.max_days_ahead);
     if (!day.value || day.value < day.min || day.value > day.max) day.value = today;
+    calendar.update({ value: day.value, min: day.min, max: day.max, today });
 
     $("room").replaceChildren(...rooms.map((r) => {
       const o = el("option", `${r.name} (${r.capacity})`);
@@ -71,37 +76,32 @@
   }
 
   async function loadSchedule() {
+    const ymd = $("day").value;
     let data;
-    try { data = await loadDayBookings($("day").value); } catch (err) { showMsg(friendlyError(err), "error"); return; }
+    try { data = await loadDayBookings(ymd); } catch (err) { showMsg(friendlyError(err), "error"); return; }
 
-    const byRoom = new Map(rooms.map((r) => [r.id, []]));
-    for (const b of data) if (byRoom.has(b.room_id)) byRoom.get(b.room_id).push(b);
+    const [y, m, d] = ymd.split("-").map(Number);
+    $("day-label").textContent = `Schedule · ${fmtDate(zoned(y, m, d, 12 * 60))}`;
+    renderTimeline($("schedule"), {
+      rooms,
+      bookings: data,
+      ymd,
+      describe: (b) => b.user_id === state.user.id
+        ? { text: `${b.title} (you)`, mine: true, onClick: (btn) => cancelBooking(b.id, btn, refresh) }
+        : { text: b.title },
+      onFree: pickSlot,
+    });
+  }
 
-    $("schedule").replaceChildren(...rooms.map((r) => {
-      const card = el("div", null, "room");
-      const h = el("h3", r.name);
-      h.append(" ", el("span", `· ${r.capacity} people`, "cap"));
-      card.append(h);
-      const items = byRoom.get(r.id);
-      if (!items.length) {
-        card.append(el("p", "Free all day", "empty"));
-        return card;
-      }
-      const ul = el("ul", null, "list");
-      for (const b of items) {
-        const mine = b.user_id === state.user.id;
-        const li = el("li", null, mine ? "mine" : "");
-        const text = el("span");
-        text.append(
-          el("span", `${fmtTime(new Date(b.starts_at))} – ${fmtTime(new Date(b.ends_at))} `, "time"),
-          el("span", mine ? `${b.title} (you)` : b.title),
-        );
-        li.append(text);
-        ul.append(li);
-      }
-      card.append(ul);
-      return card;
-    }));
+  // Clicking an empty spot on the timeline fills in the booking form.
+  function pickSlot(room, mins) {
+    const [y, m, d] = $("day").value.split("-").map(Number);
+    if (zoned(y, m, d, mins + 15) <= new Date()) { showMsg("That time has already passed.", "error"); return; }
+    $("room").value = String(room.id);
+    $("start").value = String(mins);
+    showMsg(`${room.name} at ${$("start").selectedOptions[0].textContent} selected. Add a title and press Book.`, "ok");
+    $("book-form").scrollIntoView({ behavior: "smooth", block: "center" });
+    $("title").focus({ preventScroll: true });
   }
 
   async function loadMine() {
@@ -166,6 +166,4 @@
       await refresh();
     });
   });
-
-  $("day").addEventListener("change", () => { if (state.user && $("day").value) loadSchedule(); });
 })();

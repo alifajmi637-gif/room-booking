@@ -4,10 +4,14 @@
 // re-checked by the database (RLS + admin functions), so a non-admin gets nothing.
 (() => {
   const { db, $, state, el, button, showMsg, friendlyError, withBusy,
-          ymdInTz, fmtTime, fmtStamp, loadSettings, isAdmin, loadDayBookings,
-          cancelBooking, startAuth } = window.App;
+          zoned, ymdInTz, fmtDate, fmtStamp, createCalendar, renderTimeline,
+          loadSettings, isAdmin, loadDayBookings, cancelBooking, startAuth } = window.App;
 
   let rooms = [];
+  const calendar = createCalendar($("calendar"), (ymd) => {
+    $("day").value = ymd;
+    loadSchedule();
+  });
 
   startAuth({
     async onSignedIn() {
@@ -18,7 +22,9 @@
       }
       $("denied").hidden = true;
       await loadSettings();
-      if (!$("day").value) $("day").value = ymdInTz(new Date());
+      const today = ymdInTz(new Date());
+      if (!$("day").value) $("day").value = today;
+      calendar.update({ value: $("day").value, today });  // admins can look at any day
       fillRulesForm();
       $("app").hidden = false;
       await Promise.all([reloadRooms(), loadAdmins(), loadAudit()]);
@@ -34,8 +40,9 @@
   // ---------------------------------------------------------------------------
 
   async function loadSchedule() {
+    const ymd = $("day").value;
     let data;
-    try { data = await loadDayBookings($("day").value); } catch (err) { showMsg(friendlyError(err), "error"); return; }
+    try { data = await loadDayBookings(ymd); } catch (err) { showMsg(friendlyError(err), "error"); return; }
 
     const owners = new Map();
     if (data.length) {
@@ -43,38 +50,19 @@
       if (!res.error) for (const o of res.data) owners.set(o.id, o.email);
     }
 
-    const byRoom = new Map(rooms.map((r) => [r.id, []]));
-    for (const b of data) if (byRoom.has(b.room_id)) byRoom.get(b.room_id).push(b);
-
-    $("schedule").replaceChildren(...rooms.filter((r) => r.is_active || byRoom.get(r.id).length).map((r) => {
-      const card = el("div", null, "room");
-      const h = el("h3", r.name);
-      h.append(" ", el("span", `· ${r.capacity} people${r.is_active ? "" : " · inactive"}`, "cap"));
-      card.append(h);
-      const items = byRoom.get(r.id);
-      if (!items.length) {
-        card.append(el("p", "Free all day", "empty"));
-        return card;
-      }
-      const ul = el("ul", null, "list");
-      for (const b of items) {
-        const li = el("li");
-        const text = el("span");
-        text.append(
-          el("span", `${fmtTime(new Date(b.starts_at))} – ${fmtTime(new Date(b.ends_at))} `, "time"),
-          el("span", b.title),
-          " ",
-          el("span", owners.get(b.id) || "", "who"),
-        );
-        li.append(text, button("Cancel", "link", (btn) => cancelBooking(b.id, btn, () => Promise.all([loadSchedule(), loadAudit()]))));
-        ul.append(li);
-      }
-      card.append(ul);
-      return card;
-    }));
+    const [y, m, d] = ymd.split("-").map(Number);
+    $("day-label").textContent = `All bookings · ${fmtDate(zoned(y, m, d, 12 * 60))}`;
+    const booked = new Set(data.map((b) => b.room_id));
+    renderTimeline($("schedule"), {
+      rooms: rooms.filter((r) => r.is_active || booked.has(r.id)),
+      bookings: data,
+      ymd,
+      describe: (b) => ({
+        text: owners.has(b.id) ? `${b.title} · ${owners.get(b.id)}` : b.title,
+        onClick: (btn) => cancelBooking(b.id, btn, () => Promise.all([loadSchedule(), loadAudit()])),
+      }),
+    });
   }
-
-  $("day").addEventListener("change", () => { if (state.user && $("day").value) loadSchedule(); });
 
   // ---------------------------------------------------------------------------
   // Rooms

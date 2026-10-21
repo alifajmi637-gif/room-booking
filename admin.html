@@ -40,12 +40,19 @@
 
     <!-- Every action here is re-checked by the database; hiding it is just tidiness. -->
     <section id="app" hidden>
-      <h2>All bookings</h2>
-      <div class="toolbar">
-        <label for="day">Date</label>
-        <input id="day" type="date">
+      <div class="schedule-wrap">
+        <div>
+          <input id="day" type="hidden">
+          <div id="calendar" class="cal"></div>
+        </div>
+        <div>
+          <h2 id="day-label" class="first">All bookings</h2>
+          <div class="legend">
+            <span><i class="booked"></i>Booked (hover for who, click to cancel)</span>
+          </div>
+          <div id="schedule"></div>
+        </div>
       </div>
-      <div id="schedule"></div>
 
       <h2>Rooms</h2>
       <div id="admin-rooms"></div>
