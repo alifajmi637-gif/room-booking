@@ -41,9 +41,13 @@ body {
   color: var(--text);
   font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
+/* Nothing may make the page wider than the screen; wide content (the timeline)
+   scrolls inside its own box. clip (not hidden) keeps the sticky header working. */
+html, body { max-width: 100%; overflow-x: clip; }
 header {
+  position: sticky; top: 0; z-index: 10;
   display: flex; justify-content: space-between; align-items: center; gap: 12px;
-  padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--card);
+  width: 100%; padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--card);
 }
 h1 { font-size: 18px; margin: 0; white-space: nowrap; }
 h2 { font-size: 16px; margin: 24px 0 8px; }
@@ -58,7 +62,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 16px; }
 
 form { display: grid; gap: 6px; max-width: 420px; }
 label { font-size: 13px; color: var(--muted); margin-top: 6px; }
-input, select, button { font: inherit; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); color: var(--text); }
+input, select, button { max-width: 100%; font: inherit; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); color: var(--text); }
 button { background: var(--accent); color: #fff; border: none; cursor: pointer; margin-top: 8px; }
 button:disabled { opacity: .6; cursor: wait; }
 button.link { background: none; color: var(--accent); padding: 0; margin: 0; }
@@ -74,6 +78,7 @@ button.link { background: none; color: var(--accent); padding: 0; margin: 0; }
 .room .cap { color: var(--muted); font-weight: normal; font-size: 13px; }
 .list { list-style: none; padding: 0; margin: 0; }
 .list li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 8px; border-radius: 6px; }
+.list li > span { min-width: 0; overflow-wrap: anywhere; }
 .list li.mine { background: var(--mine); }
 .empty { color: var(--muted); font-size: 14px; }
 .time { font-variant-numeric: tabular-nums; white-space: nowrap; }
