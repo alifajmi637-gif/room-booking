@@ -7,7 +7,7 @@
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex">
   <title>Room Booking Admin</title>
-  <link rel="stylesheet" href="style.css?v=202610212213">
+  <link rel="stylesheet" href="style.css?v=202610212215">
 </head>
 <body data-page="admin">
   <header>
@@ -44,7 +44,7 @@
       <div class="schedule-wrap">
         <div>
           <input id="day" type="hidden">
-          <div id="calendar" class="cal"></div>
+          <div id="calendar" class="cal card"></div>
         </div>
         <div>
           <h2 id="day-label" class="first">All bookings</h2>
@@ -55,55 +55,79 @@
         </div>
       </div>
 
-      <h2>Rooms</h2>
-      <div id="admin-rooms"></div>
-      <form id="room-form" class="inline" novalidate>
-        <input id="room-name" placeholder="New room name" maxlength="60" required>
-        <input id="room-capacity" type="number" min="1" max="500" placeholder="Capacity" required>
-        <button type="submit">Add room</button>
-      </form>
+      <div class="admin-grid">
+        <section class="card wide">
+          <h2 class="first">Rooms</h2>
+          <div id="admin-rooms"></div>
+          <form id="room-form" class="inline" novalidate>
+            <input id="room-name" placeholder="New room name" maxlength="60" required>
+            <input id="room-capacity" type="number" min="1" max="500" placeholder="Capacity" required>
+            <button type="submit">Add room</button>
+          </form>
+        </section>
 
-      <h2>Booking rules</h2>
-      <form id="rules-form" novalidate>
-        <label for="rule-tz">Timezone (e.g. Asia/Kuala_Lumpur)</label>
-        <input id="rule-tz" maxlength="64" required>
-        <label for="rule-open">Opens at (hour, 0–23)</label>
-        <input id="rule-open" type="number" min="0" max="23" required>
-        <label for="rule-close">Closes at (hour, 1–24)</label>
-        <input id="rule-close" type="number" min="1" max="24" required>
-        <label for="rule-duration">Max booking length (minutes, multiple of 15)</label>
-        <input id="rule-duration" type="number" min="15" max="1440" step="15" required>
-        <label for="rule-ahead">How far ahead people can book (days)</label>
-        <input id="rule-ahead" type="number" min="1" max="365" required>
-        <label for="rule-cap">Max upcoming bookings per person</label>
-        <input id="rule-cap" type="number" min="1" max="500" required>
-        <button type="submit">Save rules</button>
-      </form>
+        <section class="card">
+          <h2 class="first">Booking rules</h2>
+          <form id="rules-form" novalidate>
+            <div class="fields">
+              <div class="field wide">
+                <label for="rule-tz">Timezone (e.g. Asia/Kuala_Lumpur)</label>
+                <input id="rule-tz" maxlength="64" required>
+              </div>
+              <div class="field">
+                <label for="rule-open">Opens at (hour, 0–23)</label>
+                <input id="rule-open" type="number" min="0" max="23" required>
+              </div>
+              <div class="field">
+                <label for="rule-close">Closes at (hour, 1–24)</label>
+                <input id="rule-close" type="number" min="1" max="24" required>
+              </div>
+              <div class="field">
+                <label for="rule-duration">Max booking length (minutes)</label>
+                <input id="rule-duration" type="number" min="15" max="1440" step="15" required>
+              </div>
+              <div class="field">
+                <label for="rule-ahead">How far ahead people can book (days)</label>
+                <input id="rule-ahead" type="number" min="1" max="365" required>
+              </div>
+              <div class="field">
+                <label for="rule-cap">Max upcoming bookings per person</label>
+                <input id="rule-cap" type="number" min="1" max="500" required>
+              </div>
+            </div>
+            <button type="submit">Save rules</button>
+          </form>
+        </section>
 
-      <h2>Add a user</h2>
-      <form id="user-form" class="inline" novalidate>
-        <input id="user-email" type="email" placeholder="Their email" maxlength="254" autocomplete="off" required>
-        <input id="user-password" type="text" placeholder="Password (8+ characters)" maxlength="72" autocomplete="off" spellcheck="false" required>
-        <button type="button" id="user-generate" class="secondary">Generate</button>
-        <button type="submit">Create user</button>
-      </form>
-      <p class="hint">They can sign in straight away with this email and password. Send the password to them privately.</p>
+        <section class="card">
+          <h2 class="first">Add a user</h2>
+          <form id="user-form" class="inline" novalidate>
+            <input id="user-email" type="email" placeholder="Their email" maxlength="254" autocomplete="off" required>
+            <input id="user-password" type="text" placeholder="Password (8+ characters)" maxlength="72" autocomplete="off" spellcheck="false" required>
+            <button type="button" id="user-generate" class="secondary">Generate</button>
+            <button type="submit">Create user</button>
+          </form>
+          <p class="hint">They can sign in straight away with this email and password. Send the password to them privately.</p>
 
-      <h2>Admins</h2>
-      <ul id="admin-list" class="list"></ul>
-      <form id="admin-form" class="inline" novalidate>
-        <input id="admin-email" type="email" placeholder="Email of an existing user" maxlength="254" required>
-        <button type="submit">Make admin</button>
-      </form>
+          <h2>Admins</h2>
+          <ul id="admin-list" class="list"></ul>
+          <form id="admin-form" class="inline" novalidate>
+            <input id="admin-email" type="email" placeholder="Email of an existing user" maxlength="254" required>
+            <button type="submit">Make admin</button>
+          </form>
+        </section>
 
-      <h2>Recent activity</h2>
-      <ul id="audit" class="list audit"></ul>
+        <section class="card wide">
+          <h2 class="first">Recent activity</h2>
+          <ul id="audit" class="list audit"></ul>
+        </section>
+      </div>
     </section>
   </main>
 
   <script src="vendor/supabase.js"></script>
-  <script src="config.js?v=202610212213"></script>
-  <script src="common.js?v=202610212213"></script>
-  <script src="admin.js?v=202610212213"></script>
+  <script src="config.js?v=202610212215"></script>
+  <script src="common.js?v=202610212215"></script>
+  <script src="admin.js?v=202610212215"></script>
 </body>
 </html>

@@ -193,3 +193,16 @@ button.secondary { background: none; color: var(--accent); border: 1px solid var
 #auth form { max-width: none; }
 #auth button[type="submit"] { margin-top: 14px; }
 @media (max-width: 600px) { #auth, #denied { margin-top: 24px; padding: 20px; } }
+
+/* Admin page: sections as cards filling the width */
+.admin-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 16px; }
+@media (min-width: 1000px) {
+  .admin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .admin-grid > .wide { grid-column: 1 / -1; }
+}
+.admin-grid > .card > h2 { font-size: 16px; }
+.admin-grid form { max-width: none; }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 4px 12px; }
+.field { display: grid; gap: 6px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
+#rules-form > button { margin-top: 14px; }
