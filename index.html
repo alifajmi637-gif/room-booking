@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- GitHub Pages can't set HTTP headers, so the CSP lives here.
+       No inline scripts/styles, no third-party code; network only to Supabase. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co wss://*.supabase.co; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="no-referrer">
+  <title>Room Booking</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Room Booking</h1>
+    <div id="who" hidden>
+      <span id="who-email"></span>
+      <button id="sign-out" type="button" class="link">Sign out</button>
+    </div>
+  </header>
+
+  <main>
+    <p id="msg" role="status" hidden></p>
+
+    <!-- Sign in: one-time code by email, no passwords to leak -->
+    <section id="auth" hidden>
+      <h2>Sign in</h2>
+      <form id="email-form" novalidate>
+        <label for="email">Work email</label>
+        <input id="email" type="email" autocomplete="email" maxlength="254" required>
+        <button type="submit">Send code</button>
+      </form>
+      <form id="code-form" novalidate hidden>
+        <label for="code">6-digit code from your email</label>
+        <input id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
+        <button type="submit">Sign in</button>
+        <button type="button" id="code-back" class="link">Use a different email</button>
+      </form>
+    </section>
+
+    <section id="app" hidden>
+      <div class="toolbar">
+        <label for="day">Date</label>
+        <input id="day" type="date">
+      </div>
+
+      <h2>Schedule</h2>
+      <div id="schedule"></div>
+
+      <h2>Book a room</h2>
+      <form id="book-form" novalidate>
+        <label for="room">Room</label>
+        <select id="room" required></select>
+
+        <label for="start">Start</label>
+        <select id="start" required></select>
+
+        <label for="duration">Duration</label>
+        <select id="duration" required></select>
+
+        <label for="title">Meeting title</label>
+        <input id="title" maxlength="100" required>
+
+        <button type="submit">Book</button>
+      </form>
+
+      <h2>My upcoming bookings</h2>
+      <ul id="mine" class="list"></ul>
+    </section>
+  </main>
+
+  <script src="vendor/supabase.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
