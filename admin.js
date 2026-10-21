@@ -27,7 +27,7 @@
       calendar.update({ value: $("day").value, today });  // admins can look at any day
       fillRulesForm();
       $("app").hidden = false;
-      await Promise.all([reloadRooms(), loadAdmins(), loadAudit(), loadDisplayStatus()]);
+      await Promise.all([reloadRooms(), loadAdmins(), loadAudit(), loadDisplayStatus(), loadUsers()]);
     },
     onSignedOut() {
       $("app").hidden = true;
@@ -190,7 +190,7 @@
           if (err) { showMsg(friendlyError(err), "error"); return; }
           if (a.user_id === state.user.id) { location.href = "./"; return; }
           showMsg("Admin removed.", "ok");
-          await Promise.all([loadAdmins(), loadAudit()]);
+          await Promise.all([loadAdmins(), loadAudit(), loadUsers()]);
         });
       }));
       return li;
@@ -206,20 +206,89 @@
       if (error) { showMsg(friendlyError(error), "error"); return; }
       $("admin-email").value = "";
       showMsg("Admin added.", "ok");
-      await Promise.all([loadAdmins(), loadAudit()]);
+      await Promise.all([loadAdmins(), loadAudit(), loadUsers()]);
     });
   });
 
   // ---------------------------------------------------------------------------
-  // Add a user (runs in the admin-create-user Edge Function, which holds the
-  // service key and re-checks that the caller is an admin)
+  // Users. Runs in the admin-create-user Edge Function, which holds the service
+  // key and re-checks that the caller is an admin on every request.
   // ---------------------------------------------------------------------------
 
-  $("user-generate").addEventListener("click", () => {
+  async function usersApi(action, payload = {}) {
+    const { data, error } = await db.functions.invoke("admin-create-user", { body: { action, ...payload } });
+    if (error) {
+      let message = "Couldn't reach the user service. Is the Edge Function deployed?";
+      try { message = (await error.context.json()).error || message; } catch { /* network or not deployed */ }
+      throw new Error(message);
+    }
+    return data;
+  }
+
+  function newPassword() {
     // No look-alike characters (0/O, 1/l/I), so it's easy to read out or type.
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
     const bytes = crypto.getRandomValues(new Uint32Array(14));
-    $("user-password").value = Array.from(bytes, (n) => chars[n % chars.length]).join("");
+    return Array.from(bytes, (n) => chars[n % chars.length]).join("");
+  }
+
+  // Run a user action from a button, then refresh the list and activity log.
+  function userAction(btn, action, payload, done) {
+    return withBusy(btn, async () => {
+      try {
+        await usersApi(action, payload);
+      } catch (err) {
+        showMsg(err.message, "error");
+        return;
+      }
+      showMsg(done, "ok");
+      await Promise.all([loadUsers(), loadAudit()]);
+    });
+  }
+
+  async function loadUsers() {
+    let data;
+    try {
+      data = await usersApi("list");
+    } catch (err) {
+      $("user-list").replaceChildren(el("li", err.message, "empty"));
+      return;
+    }
+    if (!data.users.length) { $("user-list").replaceChildren(el("li", "No users yet.", "empty")); return; }
+    $("user-list").replaceChildren(...data.users.map((u) => {
+      const li = el("li", null, u.disabled ? "disabled" : "");
+      const info = el("span");
+      info.append(el("strong", u.email));
+      if (u.is_you) info.append(el("span", "you", "tag"));
+      if (u.is_admin) info.append(el("span", "admin", "tag"));
+      if (u.disabled) info.append(el("span", "disabled", "tag off"));
+      info.append(el("small", u.last_sign_in_at ? `Last sign-in ${fmtStamp(new Date(u.last_sign_in_at))}` : "Never signed in"));
+
+      const actions = el("span", null, "row-actions");
+      actions.append(button("Reset password", "link", (btn) => {
+        const password = prompt(`New password for ${u.email} (8+ characters):`, newPassword());
+        if (password == null) return;
+        userAction(btn, "reset_password", { userId: u.id, password }, `Password changed for ${u.email}. Send it to them privately.`);
+      }));
+      if (!u.is_you) {
+        actions.append(u.disabled
+          ? button("Enable", "link", (btn) => userAction(btn, "enable", { userId: u.id }, `${u.email} can sign in again.`))
+          : button("Disable", "danger", (btn) => {
+            if (!confirm(`Disable ${u.email}? They won't be able to sign in until you enable them again.`)) return;
+            userAction(btn, "disable", { userId: u.id }, `${u.email} is disabled.`);
+          }));
+        actions.append(button("Delete", "danger", (btn) => {
+          if (!confirm(`Delete ${u.email}? This also deletes all their bookings and can't be undone.`)) return;
+          userAction(btn, "delete", { userId: u.id }, `${u.email} was deleted.`);
+        }));
+      }
+      li.append(info, actions);
+      return li;
+    }));
+  }
+
+  $("user-generate").addEventListener("click", () => {
+    $("user-password").value = newPassword();
   });
 
   $("user-form").addEventListener("submit", (e) => {
@@ -229,17 +298,16 @@
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showMsg("Enter a valid email address.", "error"); return; }
     if (password.length < 8 || password.length > 72) { showMsg("Password must be 8–72 characters.", "error"); return; }
     withBusy(e.submitter, async () => {
-      const { error } = await db.functions.invoke("admin-create-user", { body: { email, password } });
-      if (error) {
-        let message = "Couldn't create the user.";
-        try { message = (await error.context.json()).error || message; } catch { /* network or not deployed */ }
-        showMsg(message, "error");
+      try {
+        await usersApi("create", { email, password });
+      } catch (err) {
+        showMsg(err.message, "error");
         return;
       }
       $("user-email").value = "";
       $("user-password").value = "";
       showMsg(`User ${email} created. They can sign in now.`, "ok");
-      await loadAudit();
+      await Promise.all([loadUsers(), loadAudit()]);
     });
   });
 
@@ -317,7 +385,10 @@
         return "changed booking rules";
       }
       case "admins": return row.action === "INSERT" ? "added an admin" : "removed an admin";
-      case "users": return `created user ${data.email || ""}`;
+      case "users":
+        if (row.action === "INSERT") return `created user ${data.email || ""}`;
+        if (row.action === "DELETE") return `deleted user ${data.email || ""}`;
+        return `${data.change || "changed"} user ${data.email || ""}`;
       default: return `${verb} ${row.table_name}`;
     }
   }

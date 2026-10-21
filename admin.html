@@ -7,7 +7,7 @@
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex">
   <title>Room Booking Admin</title>
-  <link rel="stylesheet" href="style.css?v=202610212238">
+  <link rel="stylesheet" href="style.css?v=202610212252">
 </head>
 <body data-page="admin">
   <header>
@@ -99,15 +99,18 @@
           </form>
         </section>
 
-        <section class="card">
-          <h2 class="first">Add a user</h2>
+        <section class="card wide">
+          <h2 class="first">Users</h2>
+          <ul id="user-list" class="list user-list"></ul>
+          <h3>Add a user</h3>
           <form id="user-form" class="inline" novalidate>
             <input id="user-email" type="email" placeholder="Their email" maxlength="254" autocomplete="off" required>
             <input id="user-password" type="text" placeholder="Password (8+ characters)" maxlength="72" autocomplete="off" spellcheck="false" required>
             <button type="button" id="user-generate" class="secondary">Generate</button>
             <button type="submit">Create user</button>
           </form>
-          <p class="hint">They can sign in straight away with this email and password. Send the password to them privately.</p>
+          <p class="hint">They can sign in straight away with this email and password. Send the password to them privately.
+            Disabling blocks sign-in at once; anyone already signed in is cut off within the hour. Deleting also removes their bookings.</p>
         </section>
 
         <section class="card">
@@ -119,7 +122,7 @@
           </form>
         </section>
 
-        <section class="card wide">
+        <section class="card">
           <h2 class="first">Lobby display</h2>
           <p class="hint" id="display-status">Checking…</p>
           <p class="hint">A page for a lobby screen that shows today's free and occupied rooms without a login. It never shows meeting titles or who booked. Anyone who has the link can see it, so create a new link if it leaks (the old one stops working).</p>
@@ -143,8 +146,8 @@
   </main>
 
   <script src="vendor/supabase.js"></script>
-  <script src="config.js?v=202610212238"></script>
-  <script src="common.js?v=202610212238"></script>
-  <script src="admin.js?v=202610212238"></script>
+  <script src="config.js?v=202610212252"></script>
+  <script src="common.js?v=202610212252"></script>
+  <script src="admin.js?v=202610212252"></script>
 </body>
 </html>
