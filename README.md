@@ -9,11 +9,13 @@ The browser is untrusted. Every rule is enforced by Postgres in [supabase/schema
 | Threat | Defence |
 | --- | --- |
 | Anonymous access | All privileges revoked from `anon`; only `authenticated` gets grants |
-| Editing or deleting someone else's booking | RLS: insert and delete only where `user_id = auth.uid()`; no UPDATE grant at all |
+| Editing or deleting someone else's booking | RLS: users insert and delete only their own; no UPDATE grant at all |
+| Becoming admin | `admins` table has no client grants at all; admin actions run through functions that re-check `is_admin()` on every call; the last admin can't be removed |
+| Covering tracks | `audit_log` is written only by triggers and has no client grants, so nobody can edit it from the app |
 | Spoofing the owner | Trigger overwrites `user_id` with `auth.uid()`; column-level grants block writing it |
 | Double booking (including races) | `EXCLUDE USING gist` constraint on room + time range |
-| Junk data | CHECK constraints on title length and control characters, 15-min slots, 15 min–8 h duration, no past bookings, max 90 days ahead |
-| One user hoarding rooms | Max 20 upcoming bookings per user, serialised with an advisory lock |
+| Junk data | CHECK constraints on text, 15-min slots, no past bookings; opening hours, max length, days ahead and per-user cap come from admin-editable `settings` and are enforced in a trigger |
+| One user hoarding rooms | Per-user cap on upcoming bookings, serialised with an advisory lock |
 | Password leaks | No passwords: sign-in is by a one-time email code |
 | XSS | User text is rendered with `textContent` only. Strict CSP: no inline scripts, no third-party scripts |
 | Supply chain | supabase-js 2.45.4 is vendored in `vendor/`, not loaded from a CDN |
@@ -35,7 +37,18 @@ The anon key in `config.js` is meant to be public. **Never** put the `service_ro
 6. Optional: to restrict access to your company domain, uncomment the `company_only_*` policies in `schema.sql`, set your domain and run them.
 7. **Project Settings → API**: copy the **Project URL** and the **anon public** key into `config.js`.
 
-### 2. GitHub Pages
+### 2. Make yourself admin
+
+Sign in to the app once, then run this in the SQL Editor with your email:
+
+```sql
+insert into public.admins (user_id)
+select id from auth.users where email = 'you@example.com';
+```
+
+Reload the app and the **Admin** panel appears. From there you can manage rooms, booking rules, other admins, and see recent activity.
+
+### 3. GitHub Pages
 
 ```bash
 git remote add origin https://github.com/<your-username>/room-booking.git
