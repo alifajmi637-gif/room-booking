@@ -13,6 +13,8 @@
   --booked-text: #8a1c14;
   --past: rgba(0, 0, 0, .06);
   --hover: rgba(31, 95, 209, .07);
+  --grid-faint: rgba(0, 0, 0, .07);
+  --sel-bg: rgba(31, 95, 209, .16);
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -30,6 +32,8 @@
     --booked-text: #ffb4ab;
     --past: rgba(255, 255, 255, .05);
     --hover: rgba(108, 156, 255, .09);
+    --grid-faint: rgba(255, 255, 255, .06);
+    --sel-bg: rgba(108, 156, 255, .22);
   }
 }
 
@@ -104,7 +108,7 @@ h2.first { margin-top: 0; }
 .schedule-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-bottom: 8px; }
 .schedule-wrap > * { min-width: 0; }
 @media (min-width: 900px) {
-  .schedule-wrap { grid-template-columns: 300px minmax(0, 1fr); align-items: start; }
+  .schedule-wrap { grid-template-columns: 340px minmax(0, 1fr); align-items: start; }
 }
 
 .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
@@ -154,3 +158,25 @@ ul.card { padding: 6px; }
 button.tl-block { cursor: pointer; }
 button.tl-block:hover { filter: brightness(.95); }
 .tl-block.mine { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* Time slider in the booking form */
+.rs { margin: 2px 0 4px; user-select: none; }
+.rs-readout { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; margin-bottom: 6px; }
+.rs.clash .rs-readout { color: var(--error); }
+.rs-track { position: relative; height: 36px; margin: 0 8px; border: 1px solid var(--border); border-radius: 6px;
+  background-color: var(--bg); touch-action: none; cursor: pointer;
+  background-image: linear-gradient(to right, var(--border) 1px, transparent 1px),
+                    linear-gradient(to right, var(--grid-faint) 1px, transparent 1px); }
+.rs-past { position: absolute; top: 0; bottom: 0; left: 0; pointer-events: none;
+  background: repeating-linear-gradient(135deg, transparent 0 5px, var(--past) 5px 8px); }
+.rs-busy { position: absolute; top: 4px; bottom: 4px; pointer-events: none; border-radius: 3px;
+  background: var(--booked); border: 1px solid var(--booked-border); }
+.rs-range { position: absolute; top: 3px; bottom: 3px; pointer-events: none; border-radius: 4px;
+  background: var(--sel-bg); border: 2px solid var(--accent); }
+.rs.clash .rs-range { border-color: var(--error); }
+.rs-handle { position: absolute; top: 50%; z-index: 2; width: 10px; height: 34px; margin: -17px 0 0 -5px; padding: 0;
+  border-radius: 5px; border: 2px solid var(--card); background: var(--accent); cursor: ew-resize; touch-action: none; }
+.rs.clash .rs-handle { background: var(--error); }
+.rs-handle:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
+.rs-labels { position: relative; height: 16px; margin: 4px 8px 0; }
+.rs-labels span { position: absolute; transform: translateX(-50%); font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
