@@ -55,7 +55,8 @@ header {
 }
 h1 { font-size: 18px; margin: 0; white-space: nowrap; }
 h2 { font-size: 16px; margin: 24px 0 8px; }
-main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+main { max-width: 1800px; margin: 0 auto; padding: 16px; }
+@media (min-width: 900px) { main { padding: 20px 24px; } }
 #who { display: flex; gap: 14px; align-items: center; min-width: 0; color: var(--muted); font-size: 14px; white-space: nowrap; }
 #who-email { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 600px) {
