@@ -92,10 +92,18 @@ button.danger { background: none; color: var(--error); padding: 0; margin: 0; }
 h2.first { margin-top: 0; }
 .schedule-wrap { display: grid; gap: 16px; margin-bottom: 8px; }
 @media (min-width: 900px) {
-  .schedule-wrap { grid-template-columns: 280px minmax(0, 1fr); align-items: start; }
+  .schedule-wrap { grid-template-columns: 300px minmax(0, 1fr); align-items: start; }
 }
 
-.cal { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+.side { display: grid; gap: 16px; }
+.side h2 { font-size: 15px; }
+.side form { max-width: none; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pair > div { display: grid; gap: 6px; min-width: 0; }
+.pair select { width: 100%; }
+ul.card { padding: 6px; }
+.cal { padding: 10px; }
 .cal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .cal-title { font-weight: 600; }
 .cal-nav { background: none; color: var(--text); margin: 0; padding: 2px 12px; font-size: 20px; line-height: 1; }
@@ -124,9 +132,7 @@ h2.first { margin-top: 0; }
 .tl-track.clickable { cursor: pointer; }
 .tl-track.clickable:hover { background-color: var(--hover); }
 .tl-hours { min-height: 30px; background-image: none; }
-.tl-hour { position: absolute; top: 8px; font-size: 11px; color: var(--muted); transform: translateX(-50%); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.tl-hour:first-child { transform: none; padding-left: 3px; }
-.tl-hour:last-child { transform: translateX(-100%); padding-right: 3px; }
+.tl-hour { position: absolute; top: 8px; padding-left: 5px; font-size: 11px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .tl-past { position: absolute; top: 0; bottom: 0; left: 0; pointer-events: none;
   background: repeating-linear-gradient(135deg, transparent 0 6px, var(--past) 6px 9px); }
 .tl-now { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--error); pointer-events: none; z-index: 2; }

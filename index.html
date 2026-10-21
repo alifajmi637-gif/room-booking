@@ -37,10 +37,35 @@
 
     <section id="app" hidden>
       <div class="schedule-wrap">
-        <div>
+        <aside class="side">
           <input id="day" type="hidden">
-          <div id="calendar" class="cal"></div>
-        </div>
+          <div id="calendar" class="cal card"></div>
+
+          <div class="card">
+            <h2 class="first">Book a room</h2>
+            <form id="book-form" novalidate>
+              <label for="room">Room</label>
+              <select id="room" required></select>
+
+              <div class="pair">
+                <div>
+                  <label for="start">Start</label>
+                  <select id="start" required></select>
+                </div>
+                <div>
+                  <label for="duration">Duration</label>
+                  <select id="duration" required></select>
+                </div>
+              </div>
+
+              <label for="title">Meeting title</label>
+              <input id="title" maxlength="100" required>
+
+              <button type="submit">Book</button>
+            </form>
+          </div>
+        </aside>
+
         <div>
           <h2 id="day-label" class="first">Schedule</h2>
           <div class="legend">
@@ -49,28 +74,11 @@
             <span><i class="yours"></i>Yours (click to cancel)</span>
           </div>
           <div id="schedule"></div>
+
+          <h2>My upcoming bookings</h2>
+          <ul id="mine" class="list card"></ul>
         </div>
       </div>
-
-      <h2>Book a room</h2>
-      <form id="book-form" novalidate>
-        <label for="room">Room</label>
-        <select id="room" required></select>
-
-        <label for="start">Start</label>
-        <select id="start" required></select>
-
-        <label for="duration">Duration</label>
-        <select id="duration" required></select>
-
-        <label for="title">Meeting title</label>
-        <input id="title" maxlength="100" required>
-
-        <button type="submit">Book</button>
-      </form>
-
-      <h2>My upcoming bookings</h2>
-      <ul id="mine" class="list"></ul>
     </section>
   </main>
 

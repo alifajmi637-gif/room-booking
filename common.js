@@ -178,7 +178,7 @@ window.App = (() => {
     const inner = el("div", null, "tl-inner");
 
     const hourTrack = el("div", null, "tl-track tl-hours");
-    for (let h = s.open_hour; h <= s.close_hour; h++) {
+    for (let h = s.open_hour; h < s.close_hour; h++) {  // label sits at the start of each hour
       const t = el("span", `${String(h % 24).padStart(2, "0")}:00`, "tl-hour");
       t.style.left = pct(zoned(y, m, d, h * 60).getTime());
       hourTrack.append(t);
