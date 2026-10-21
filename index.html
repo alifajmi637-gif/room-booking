@@ -8,7 +8,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co wss://*.supabase.co; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
   <meta name="referrer" content="no-referrer">
   <title>Room Booking</title>
-  <link rel="stylesheet" href="style.css?v=202610211703">
+  <link rel="stylesheet" href="style.css?v=202610212208">
 </head>
 <body>
   <header>
@@ -26,6 +26,7 @@
     <!-- Accounts are created by an admin in the Supabase dashboard; no public sign-up. -->
     <section id="auth" hidden>
       <h2>Sign in</h2>
+      <p class="auth-sub">Use the email and password your admin gave you.</p>
       <form id="login-form" novalidate>
         <label for="email">Email</label>
         <input id="email" type="email" autocomplete="username" maxlength="254" required>
@@ -86,8 +87,8 @@
   </main>
 
   <script src="vendor/supabase.js"></script>
-  <script src="config.js?v=202610211703"></script>
-  <script src="common.js?v=202610211703"></script>
-  <script src="app.js?v=202610211703"></script>
+  <script src="config.js?v=202610212208"></script>
+  <script src="common.js?v=202610212208"></script>
+  <script src="app.js?v=202610212208"></script>
 </body>
 </html>

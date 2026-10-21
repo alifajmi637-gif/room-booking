@@ -205,3 +205,12 @@ button.tl-block:hover { filter: brightness(.95); }
 /* Admin: add a user */
 .hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
 button.secondary { background: none; color: var(--accent); border: 1px solid var(--accent); }
+
+/* Sign-in (and "admins only") as a centred card */
+#auth, #denied { max-width: 400px; margin: 10vh auto 0; padding: 28px; border-radius: 12px;
+  background: var(--card); border: 1px solid var(--border); }
+#auth h2, #denied h2 { margin: 0 0 4px; font-size: 20px; }
+.auth-sub { margin: 0 0 16px; color: var(--muted); font-size: 14px; }
+#auth form { max-width: none; }
+#auth button[type="submit"] { margin-top: 14px; }
+@media (max-width: 600px) { #auth, #denied { margin-top: 24px; padding: 20px; } }
