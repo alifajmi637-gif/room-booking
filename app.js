@@ -8,17 +8,9 @@
     return;
   }
 
-  // Read what the email link brought back before supabase-js consumes it, so a
-  // failed sign-in can be explained instead of silently showing the form again.
-  const urlParams = new URLSearchParams(location.search);
-  const hashParams = new URLSearchParams(location.hash.slice(1));
-  const linkError = urlParams.get("error_description") || hashParams.get("error_description");
-  const hadLinkCode = urlParams.has("code");
-
   const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.APP_CONFIG;
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    // PKCE: the emailed link only completes sign-in in the browser that asked for it.
-    auth: { flowType: "pkce", persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
   });
 
   const $ = (id) => document.getElementById(id);
@@ -123,24 +115,23 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Auth (email one-time link)
+  // Auth (email + password; accounts are created by an admin in Supabase)
   // ---------------------------------------------------------------------------
 
-  $("email-form").addEventListener("submit", (e) => {
+  $("login-form").addEventListener("submit", (e) => {
     e.preventDefault();
     const email = $("email").value.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
-      showMsg("Enter a valid email address.", "error");
-      return;
-    }
+    const password = $("password").value;
+    if (!email || !password) { showMsg("Enter your email and password.", "error"); return; }
     withBusy(e.submitter, async () => {
-      const { error } = await db.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: true, emailRedirectTo: location.origin + location.pathname },
-      });
-      // Same response whether or not the account exists (no user enumeration).
-      if (error && error.status === 429) { showMsg(friendlyError(error), "error"); return; }
-      showMsg("If that address is allowed, a sign-in link is on its way. Open it in this browser.", "ok");
+      const { error } = await db.auth.signInWithPassword({ email, password });
+      $("password").value = "";
+      // One message for every failure, so it doesn't reveal which emails have accounts.
+      if (error) {
+        showMsg(error.status === 429 ? friendlyError(error) : "Wrong email or password.", "error");
+        return;
+      }
+      showMsg("");
     });
   });
 
@@ -154,16 +145,6 @@
     const nextUser = session ? session.user : null;
     const changed = (nextUser && nextUser.id) !== (user && user.id);
     user = nextUser;
-    // Drop the one-time ?code= / #error from the address bar once it has been read.
-    if (location.search || location.hash) history.replaceState(null, "", location.pathname);
-    if (event === "INITIAL_SESSION" && !nextUser && (linkError || hadLinkCode)) {
-      if (linkError) console.warn("Sign-in link error:", linkError);
-      // Fixed wording only: never echo URL text onto the page.
-      setTimeout(() => showMsg(linkError
-        ? "That sign-in link didn't work. It may have expired or already been used. Request a new one below."
-        : "That sign-in link must be opened in the same browser you requested it from. Request a new one below.",
-        "error"), 0);
-    }
     if (event === "INITIAL_SESSION" || changed) setTimeout(render, 0);
   });
 
