@@ -3,11 +3,12 @@
 // User page: see the schedule, book a room, cancel your own bookings.
 (() => {
   const { db, $, state, el, button, showMsg, friendlyError, withBusy,
-          zoned, ymdInTz, addDays, fmtTime, fmtDate, createCalendar, renderTimeline,
+          zoned, ymdInTz, addDays, fmtTime, fmtDate, hhmm, MIN_LEN, createCalendar, renderTimeline,
           loadSettings, isAdmin, loadDayBookings, cancelBooking, startAuth } = window.App;
 
   let rooms = [];
   let dayBookings = [];
+  let timeline = null;
   const calendar = createCalendar($("calendar"), (ymd) => {
     $("day").value = ymd;
     loadSchedule();
@@ -18,8 +19,25 @@
     return h && r ? `${h} h ${r} min` : h ? `${h} h` : `${r} min`;
   }
 
-  const STEP = 15;
-  const hhmm = (min) => `${String(Math.floor(min / 60) % 24).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+  // Bookings are to the minute; the form's dropdowns list quarter-hours, and any
+  // other value picked on the slider or timeline is added to them on the fly.
+  function ensureOption(select, value, label) {
+    const v = String(value);
+    if (![...select.options].some((o) => o.value === v)) {
+      const o = el("option", label);
+      o.value = v;
+      select.insertBefore(o, [...select.options].find((x) => Number(x.value) > value) || null);
+    }
+    select.value = v;
+  }
+
+  // Single place that sets the picked time: dropdowns, form slider and timeline.
+  function setRange(a, b, { fromSlider = false } = {}) {
+    ensureOption($("start"), a, hhmm(a));
+    ensureOption($("duration"), b - a, minutesLabel(b - a));
+    if (!fromSlider) slider.set(a, b);
+    if (timeline) timeline.select(Number($("room").value), a, b);
+  }
 
   // Minutes since midnight (org timezone) on the selected day that are already past.
   function nowMinOnDay() {
@@ -67,16 +85,15 @@
       }
     }
 
-    // Push the current range into the dropdowns.
+    // Push the current range into the dropdowns and the timeline.
     function commit() {
-      $("start").value = String(a);
-      $("duration").value = String(b - a);
+      setRange(a, b, { fromSlider: true });
     }
 
     function move(which, min) {
-      const v = Math.round(min / STEP) * STEP;
-      if (which === "start") a = Math.min(b - STEP, Math.max(open, b - maxLen, v));
-      else b = Math.max(a + STEP, Math.min(close, a + maxLen, v));
+      const v = Math.round(min);  // minute precision
+      if (which === "start") a = Math.min(b - MIN_LEN, Math.max(open, b - maxLen, v));
+      else b = Math.max(a + MIN_LEN, Math.min(close, a + maxLen, v));
       draw();
     }
 
@@ -99,12 +116,16 @@
     });
     track.addEventListener("pointermove", (e) => { if (active) move(active, minAt(e.clientX)); });
     track.addEventListener("pointerup", () => { if (active) { active = null; commit(); } });
+    // While dragging, keep the timeline selection moving along too.
+    track.addEventListener("pointermove", () => { if (active && timeline) timeline.select(Number($("room").value), a, b); });
     track.addEventListener("pointercancel", () => { active = null; });
 
     for (const [which, h] of Object.entries(handles)) {
       h.addEventListener("keydown", (e) => {
-        const delta = { ArrowLeft: -STEP, ArrowDown: -STEP, ArrowRight: STEP, ArrowUp: STEP }[e.key];
-        if (!delta) return;
+        // Arrow keys nudge by 1 minute, or 15 with Shift.
+        const dir = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 }[e.key];
+        if (!dir) return;
+        const delta = dir * (e.shiftKey ? 15 : 1);
         e.preventDefault();
         move(which, (which === "start" ? a : b) + delta);
         commit();
@@ -132,8 +153,8 @@
         }));
       },
       set(na, nb) {
-        a = Math.max(open, Math.min(close - STEP, na));
-        b = Math.min(close, a + maxLen, Math.max(a + STEP, nb));
+        a = Math.max(open, Math.min(close - MIN_LEN, na));
+        b = Math.min(close, a + maxLen, Math.max(a + MIN_LEN, nb));
         draw();
         if (a !== na || b !== nb) commit();  // e.g. a 1-hour default that ran past closing
       },
@@ -160,17 +181,17 @@
     const intervals = dayBookings
       .filter((b) => b.room_id === roomId)
       .map((b) => [(new Date(b.starts_at) - dayStart) / 60000, (new Date(b.ends_at) - dayStart) / 60000]);
-    slider.setBusy(intervals, Math.ceil(nowMinOnDay() / STEP) * STEP);
+    slider.setBusy(intervals, Math.ceil(nowMinOnDay()));
   }
 
-  function syncSliderFromForm() {
+  function syncFromForm() {
     const start = Number($("start").value);
-    slider.set(start, start + Number($("duration").value));
+    setRange(start, start + Number($("duration").value));
   }
 
-  $("room").addEventListener("change", updateSliderBusy);
-  $("start").addEventListener("change", syncSliderFromForm);
-  $("duration").addEventListener("change", syncSliderFromForm);
+  $("room").addEventListener("change", () => { updateSliderBusy(); syncFromForm(); });
+  $("start").addEventListener("change", syncFromForm);
+  $("duration").addEventListener("change", syncFromForm);
 
   startAuth({
     async onSignedIn() {
@@ -221,7 +242,7 @@
 
     // Every 15-minute length, so any range picked on the slider fits.
     const durs = [];
-    for (let m = STEP; m <= s.max_duration_minutes; m += STEP) durs.push(m);
+    for (let m = 15; m <= s.max_duration_minutes; m += 15) durs.push(m);
     $("duration").replaceChildren(...durs.map((m) => {
       const o = el("option", minutesLabel(m));
       o.value = String(m);
@@ -230,11 +251,11 @@
     $("duration").value = durs.includes(60) ? "60" : String(durs[0]);
 
     // Start at the next free quarter-hour rather than at opening time.
-    const next = Math.ceil(nowMinOnDay() / STEP) * STEP;
+    const next = Math.ceil(nowMinOnDay() / 15) * 15;
     if (next > s.open_hour * 60 && next < s.close_hour * 60) $("start").value = String(next);
 
     slider.configure({ open: s.open_hour * 60, close: s.close_hour * 60, maxLen: s.max_duration_minutes });
-    syncSliderFromForm();
+    syncFromForm();
   }
 
   async function loadSchedule() {
@@ -246,28 +267,26 @@
 
     const [y, m, d] = ymd.split("-").map(Number);
     $("day-label").textContent = `Schedule · ${fmtDate(zoned(y, m, d, 12 * 60))}`;
-    renderTimeline($("schedule"), {
+    timeline = renderTimeline($("schedule"), {
       rooms,
       bookings: data,
       ymd,
       describe: (b) => b.user_id === state.user.id
         ? { text: `${b.title} (you)`, mine: true, onClick: (btn) => cancelBooking(b.id, btn, refresh) }
         : { text: b.title },
-      onFree: pickSlot,
+      onSelect: pickRange,
+      maxMinutes: state.settings.max_duration_minutes,
     });
+    syncFromForm();
   }
 
-  // Clicking an empty spot on the timeline fills in the booking form.
-  function pickSlot(room, mins) {
-    const [y, m, d] = $("day").value.split("-").map(Number);
-    if (zoned(y, m, d, mins + 15) <= new Date()) { showMsg("That time has already passed.", "error"); return; }
-    $("room").value = String(room.id);
-    $("start").value = String(mins);
-    updateSliderBusy();
-    syncSliderFromForm();
-    showMsg(`${room.name} at ${$("start").selectedOptions[0].textContent} selected. Add a title and press Book.`, "ok");
-    $("book-form").scrollIntoView({ behavior: "smooth", block: "center" });
-    $("title").focus({ preventScroll: true });
+  // Dragging on the timeline fills in the booking form.
+  function pickRange(room, a, b) {
+    if ($("room").value !== String(room.id)) {
+      $("room").value = String(room.id);
+      updateSliderBusy();
+    }
+    setRange(a, b);  // the slider readout in the form shows the picked range
   }
 
   async function loadMine() {

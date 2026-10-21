@@ -54,9 +54,9 @@ create table if not exists public.bookings (
 
   constraint ends_after_start   check (ends_at > starts_at),
   constraint max_24_hours       check (ends_at - starts_at <= interval '24 hours'),
-  constraint min_15_minutes     check (ends_at - starts_at >= interval '15 minutes'),
-  constraint quarter_hour_slots check (
-    extract(epoch from starts_at) % 900 = 0 and extract(epoch from ends_at) % 900 = 0
+  constraint min_5_minutes      check (ends_at - starts_at >= interval '5 minutes'),
+  constraint whole_minutes      check (
+    extract(epoch from starts_at) % 60 = 0 and extract(epoch from ends_at) % 60 = 0
   ),
   -- Race-proof double-booking prevention: two concurrent inserts can't both win.
   constraint no_overlap exclude using gist (
@@ -94,6 +94,15 @@ alter table public.bookings add constraint max_24_hours
 alter table public.rooms    no force row level security;
 alter table public.bookings no force row level security;
 drop policy if exists bookings_delete_own_future on public.bookings;
+-- Minute-precision bookings (was: 15-minute slots, 15-minute minimum).
+alter table public.bookings drop constraint if exists quarter_hour_slots;
+alter table public.bookings drop constraint if exists min_15_minutes;
+alter table public.bookings drop constraint if exists whole_minutes;
+alter table public.bookings drop constraint if exists min_5_minutes;
+alter table public.bookings add constraint whole_minutes
+  check (extract(epoch from starts_at) % 60 = 0 and extract(epoch from ends_at) % 60 = 0);
+alter table public.bookings add constraint min_5_minutes
+  check (ends_at - starts_at >= interval '5 minutes');
 
 -- ---------------------------------------------------------------------------
 -- Helpers
