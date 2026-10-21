@@ -9,9 +9,18 @@ window.App = (() => {
     throw new Error("framed");
   }
 
+  // Each page keeps its own session, so signing in on one doesn't sign you in on
+  // the other. The admin session lives in sessionStorage: it ends with the tab.
+  const isAdminPage = document.body.dataset.page === "admin";
   const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.APP_CONFIG;
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false,
+      storageKey: isAdminPage ? "room-booking-admin" : "room-booking-user",
+      storage: isAdminPage ? window.sessionStorage : window.localStorage,
+    },
   });
 
   const $ = (id) => document.getElementById(id);
