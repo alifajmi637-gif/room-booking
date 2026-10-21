@@ -64,7 +64,9 @@ window.App = (() => {
     if (err.code === "23514") return "That isn't allowed (check the values you entered).";
     if (err.status === 429) return "Too many attempts. Please wait a minute and try again.";
     console.error(err);
-    return "Something went wrong. Please try again.";
+    // The code alone reveals nothing sensitive but makes problems quick to diagnose.
+    const code = err.code || err.status;
+    return `Something went wrong${code ? ` (code ${code})` : ""}. Please try again.`;
   }
 
   async function withBusy(btn, fn) {

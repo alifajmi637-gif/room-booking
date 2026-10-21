@@ -158,7 +158,12 @@ begin
     raise exception 'Not authenticated' using errcode = '42501';
   end if;
 
-  select * into strict s from public.settings;
+  -- Named columns only: clients can't read display_key_hash (and don't need to).
+  select st.timezone, st.open_hour, st.close_hour, st.max_duration_minutes, st.max_days_ahead,
+         st.max_upcoming_per_user
+    into strict s.timezone, s.open_hour, s.close_hour, s.max_duration_minutes, s.max_days_ahead,
+         s.max_upcoming_per_user
+    from public.settings st;
 
   if new.starts_at < now() then
     raise exception 'Cannot book in the past' using errcode = '22023';
@@ -413,7 +418,7 @@ declare
 begin
   perform public.require_admin();
   k := encode(extensions.gen_random_bytes(24), 'hex');
-  update public.settings set display_key_hash = encode(extensions.digest(k, 'sha256'), 'hex');
+  update public.settings set display_key_hash = encode(extensions.digest(k, 'sha256'), 'hex') where id;
   return k;
 end;
 $$;
@@ -426,7 +431,7 @@ set search_path = ''
 as $$
 begin
   perform public.require_admin();
-  update public.settings set display_key_hash = null;
+  update public.settings set display_key_hash = null where id;  -- Supabase requires a WHERE
 end;
 $$;
 
