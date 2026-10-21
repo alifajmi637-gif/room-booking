@@ -7,7 +7,7 @@
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex">
   <title>Room Booking Admin</title>
-  <link rel="stylesheet" href="style.css?v=202610212215">
+  <link rel="stylesheet" href="style.css?v=202610212216">
 </head>
 <body data-page="admin">
   <header>
@@ -66,11 +66,11 @@
           </form>
         </section>
 
-        <section class="card">
+        <section class="card wide">
           <h2 class="first">Booking rules</h2>
           <form id="rules-form" novalidate>
             <div class="fields">
-              <div class="field wide">
+              <div class="field">
                 <label for="rule-tz">Timezone (e.g. Asia/Kuala_Lumpur)</label>
                 <input id="rule-tz" maxlength="64" required>
               </div>
@@ -108,8 +108,10 @@
             <button type="submit">Create user</button>
           </form>
           <p class="hint">They can sign in straight away with this email and password. Send the password to them privately.</p>
+        </section>
 
-          <h2>Admins</h2>
+        <section class="card">
+          <h2 class="first">Admins</h2>
           <ul id="admin-list" class="list"></ul>
           <form id="admin-form" class="inline" novalidate>
             <input id="admin-email" type="email" placeholder="Email of an existing user" maxlength="254" required>
@@ -126,8 +128,8 @@
   </main>
 
   <script src="vendor/supabase.js"></script>
-  <script src="config.js?v=202610212215"></script>
-  <script src="common.js?v=202610212215"></script>
-  <script src="admin.js?v=202610212215"></script>
+  <script src="config.js?v=202610212216"></script>
+  <script src="common.js?v=202610212216"></script>
+  <script src="admin.js?v=202610212216"></script>
 </body>
 </html>

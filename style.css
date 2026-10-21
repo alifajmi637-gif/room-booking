@@ -202,7 +202,7 @@ button.secondary { background: none; color: var(--accent); border: 1px solid var
 }
 .admin-grid > .card > h2 { font-size: 16px; }
 .admin-grid form { max-width: none; }
-.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 4px 12px; }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 4px 12px; }
 .field { display: grid; gap: 6px; min-width: 0; }
 .field.wide { grid-column: 1 / -1; }
-#rules-form > button { margin-top: 14px; }
+#rules-form > button { margin-top: 14px; width: 100%; }
