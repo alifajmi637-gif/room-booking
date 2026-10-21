@@ -358,6 +358,92 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
+-- Lobby display: a no-login page showing today's occupancy. It works only with
+-- a secret key (in the link after #, so it never reaches GitHub). Only the key's
+-- SHA-256 hash is stored. It returns rooms and busy times, never titles or people.
+-- ---------------------------------------------------------------------------
+
+alter table public.settings add column if not exists display_key_hash text;
+
+create or replace function public.display_today(p_key text)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  s         public.settings;
+  day_start timestamptz;
+begin
+  select * into strict s from public.settings;
+  if s.display_key_hash is null or p_key is null or length(p_key) < 32
+     or encode(extensions.digest(p_key, 'sha256'), 'hex') <> s.display_key_hash then
+    raise exception 'Invalid display link' using errcode = '42501';
+  end if;
+
+  -- Midnight today in the organisation's timezone.
+  day_start := ((now() at time zone s.timezone)::date)::timestamp at time zone s.timezone;
+
+  return jsonb_build_object(
+    'timezone', s.timezone,
+    'open_hour', s.open_hour,
+    'close_hour', s.close_hour,
+    'rooms', coalesce((
+      select jsonb_agg(jsonb_build_object('id', r.id, 'name', r.name, 'capacity', r.capacity) order by r.name)
+        from public.rooms r where r.is_active), '[]'::jsonb),
+    'bookings', coalesce((
+      select jsonb_agg(jsonb_build_object('room_id', b.room_id, 'starts_at', b.starts_at, 'ends_at', b.ends_at)
+                       order by b.starts_at)
+        from public.bookings b join public.rooms r on r.id = b.room_id and r.is_active
+       where b.starts_at < day_start + interval '1 day' and b.ends_at > day_start), '[]'::jsonb)
+  );
+end;
+$$;
+
+-- Makes a new display key (the old link stops working) and returns it once.
+create or replace function public.admin_rotate_display_key()
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  k text;
+begin
+  perform public.require_admin();
+  k := encode(extensions.gen_random_bytes(24), 'hex');
+  update public.settings set display_key_hash = encode(extensions.digest(k, 'sha256'), 'hex');
+  return k;
+end;
+$$;
+
+create or replace function public.admin_disable_display()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform public.require_admin();
+  update public.settings set display_key_hash = null;
+end;
+$$;
+
+create or replace function public.admin_display_enabled()
+returns boolean
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  perform public.require_admin();
+  return (select display_key_hash is not null from public.settings);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
 -- Privileges: start from zero, grant only what the app needs.
 -- ---------------------------------------------------------------------------
 
@@ -387,7 +473,18 @@ grant execute on function public.admin_audit_log(int)         to authenticated;
 
 -- admins, audit_log: no table grants at all. Only reachable via the functions above.
 
-grant select on public.settings to authenticated;
+revoke all on function public.display_today(text)          from public;
+revoke all on function public.admin_rotate_display_key()     from anon, public;
+revoke all on function public.admin_disable_display()        from anon, public;
+revoke all on function public.admin_display_enabled()        from anon, public;
+grant execute on function public.display_today(text)         to anon, authenticated;
+grant execute on function public.admin_rotate_display_key()  to authenticated;
+grant execute on function public.admin_disable_display()     to authenticated;
+grant execute on function public.admin_display_enabled()     to authenticated;
+
+-- Column-level, so nobody can read display_key_hash.
+grant select (id, timezone, open_hour, close_hour, max_duration_minutes, max_days_ahead,
+              max_upcoming_per_user) on public.settings to authenticated;
 grant update (timezone, open_hour, close_hour, max_duration_minutes, max_days_ahead,
               max_upcoming_per_user) on public.settings to authenticated;  -- RLS: admins only
 

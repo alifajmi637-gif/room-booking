@@ -15,6 +15,9 @@
   --hover: rgba(31, 95, 209, .07);
   --grid-faint: rgba(0, 0, 0, .07);
   --sel-bg: rgba(31, 95, 209, .16);
+  --free: #067647;
+  --free-bg: #e3f6ec;
+  --busy-bg: #fde4e1;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -34,6 +37,9 @@
     --hover: rgba(108, 156, 255, .09);
     --grid-faint: rgba(255, 255, 255, .06);
     --sel-bg: rgba(108, 156, 255, .22);
+    --free: #6fdc9f;
+    --free-bg: #143326;
+    --busy-bg: #45272a;
   }
 }
 
@@ -213,4 +219,27 @@ button.secondary { background: none; color: var(--accent); border: 1px solid var
   .cal-col { display: flex; flex-direction: column; }
   .cal-col .cal { flex: 1; display: flex; flex-direction: column; }
   .cal-col .cal-grid { flex: 1; grid-template-rows: auto; grid-auto-rows: 1fr; align-items: center; }
+}
+
+/* Lobby display */
+.head-right { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.clock { color: var(--muted); font-size: 15px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.clock strong { color: var(--text); font-size: 20px; margin-left: 6px; }
+a.button-link { display: inline-block; padding: 8px 14px; border-radius: 6px; background: var(--accent); color: #fff;
+  text-decoration: none; font-weight: 600; white-space: nowrap; }
+a.button-link:hover { filter: brightness(1.08); }
+.status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.status-card { display: grid; gap: 2px; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); }
+.status-card strong { font-size: 17px; }
+.status-card small { color: var(--muted); }
+.status-card .state { margin-top: 8px; font-size: 22px; font-weight: 700; }
+.status-card .detail { color: var(--muted); font-size: 14px; }
+.status-card.free { background: var(--free-bg); border-color: var(--free); }
+.status-card.free .state { color: var(--free); }
+.status-card.busy { background: var(--busy-bg); border-color: var(--booked-border); }
+.status-card.busy .state { color: var(--error); }
+@media (max-width: 600px) {
+  .clock span { display: none; }
+  .head-right { gap: 10px; }
+  a.button-link { padding: 6px 10px; font-size: 14px; }
 }

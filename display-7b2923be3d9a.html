@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co wss://*.supabase.co; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Rooms Today</title>
+  <link rel="stylesheet" href="style.css?v=202610212226">
+</head>
+<body data-page="display">
+  <!-- Lobby display: today's occupancy, no login. Needs the secret key after # in
+       the link (made on the admin page); the database checks it on every refresh. -->
+  <header>
+    <h1>Rooms today</h1>
+    <div class="head-right">
+      <div class="clock"><span id="clock-date"></span> <strong id="clock-time"></strong></div>
+      <a class="button-link" href="./">Book a room</a>
+    </div>
+  </header>
+
+  <main>
+    <p id="msg" role="status" hidden></p>
+
+    <section id="app" hidden>
+      <div id="status" class="status-grid"></div>
+      <h2>Today's schedule</h2>
+      <div class="legend">
+        <span><i class="free"></i>Free</span>
+        <span><i class="booked"></i>Occupied</span>
+      </div>
+      <div id="schedule"></div>
+      <p class="hint" id="updated"></p>
+    </section>
+  </main>
+
+  <script src="vendor/supabase.js"></script>
+  <script src="config.js?v=202610212226"></script>
+  <script src="common.js?v=202610212226"></script>
+  <script src="display.js?v=202610212226"></script>
+</body>
+</html>

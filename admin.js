@@ -27,7 +27,7 @@
       calendar.update({ value: $("day").value, today });  // admins can look at any day
       fillRulesForm();
       $("app").hidden = false;
-      await Promise.all([reloadRooms(), loadAdmins(), loadAudit()]);
+      await Promise.all([reloadRooms(), loadAdmins(), loadAudit(), loadDisplayStatus()]);
     },
     onSignedOut() {
       $("app").hidden = true;
@@ -244,6 +244,57 @@
   });
 
   // ---------------------------------------------------------------------------
+  // Lobby display link. The key is made and hashed in the database and shown
+  // here once; it goes after # so it never reaches GitHub's servers.
+  // ---------------------------------------------------------------------------
+
+  const DISPLAY_PAGE = "display-7b2923be3d9a.html";
+
+  async function loadDisplayStatus() {
+    const { data, error } = await db.rpc("admin_display_enabled");
+    $("display-status").textContent = error
+      ? "Couldn't check the display link."
+      : data ? "The display link is on." : "The display link is off.";
+  }
+
+  $("display-create").addEventListener("click", (e) => {
+    if (!confirm("Create a new display link? Any existing link stops working.")) return;
+    withBusy(e.currentTarget, async () => {
+      const { data: key, error } = await db.rpc("admin_rotate_display_key");
+      if (error) { showMsg(friendlyError(error), "error"); return; }
+      const base = location.href.replace(/[^/]*([?#].*)?$/, "");
+      $("display-link").value = `${base}${DISPLAY_PAGE}#k=${key}`;
+      $("display-link-box").hidden = false;
+      $("display-once").hidden = false;
+      showMsg("New display link created.", "ok");
+      await Promise.all([loadDisplayStatus(), loadAudit()]);
+    });
+  });
+
+  $("display-off").addEventListener("click", (e) => {
+    if (!confirm("Turn off the display link? The lobby screen will stop showing the schedule.")) return;
+    withBusy(e.currentTarget, async () => {
+      const { error } = await db.rpc("admin_disable_display");
+      if (error) { showMsg(friendlyError(error), "error"); return; }
+      $("display-link-box").hidden = true;
+      $("display-once").hidden = true;
+      $("display-link").value = "";
+      showMsg("Display link turned off.", "ok");
+      await Promise.all([loadDisplayStatus(), loadAudit()]);
+    });
+  });
+
+  $("display-copy").addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText($("display-link").value);
+      showMsg("Link copied.", "ok");
+    } catch {
+      $("display-link").select();
+      showMsg("Press Ctrl+C to copy the selected link.", "ok");
+    }
+  });
+
+  // ---------------------------------------------------------------------------
   // Activity log
   // ---------------------------------------------------------------------------
 
@@ -257,7 +308,14 @@
         return `${row.action === "INSERT" ? "booked" : "cancelled"} ${room ? room.name : "a room"} ${when}: ${data.title || ""}`;
       }
       case "rooms": return `${verb} room "${data.name || ""}"`;
-      case "settings": return "changed booking rules";
+      case "settings": {
+        const o = row.old_data || {}, n = row.new_data || {};
+        const keys = Object.keys(n).filter((k) => JSON.stringify(o[k]) !== JSON.stringify(n[k]));
+        if (keys.length === 1 && keys[0] === "display_key_hash") {
+          return n.display_key_hash ? "created a new display link" : "turned off the display link";
+        }
+        return "changed booking rules";
+      }
       case "admins": return row.action === "INSERT" ? "added an admin" : "removed an admin";
       case "users": return `created user ${data.email || ""}`;
       default: return `${verb} ${row.table_name}`;

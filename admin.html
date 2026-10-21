@@ -7,7 +7,7 @@
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex">
   <title>Room Booking Admin</title>
-  <link rel="stylesheet" href="style.css?v=202610212220">
+  <link rel="stylesheet" href="style.css?v=202610212226">
 </head>
 <body data-page="admin">
   <header>
@@ -120,6 +120,21 @@
         </section>
 
         <section class="card wide">
+          <h2 class="first">Lobby display</h2>
+          <p class="hint" id="display-status">Checking…</p>
+          <p class="hint">A page for a lobby screen that shows today's free and occupied rooms without a login. It never shows meeting titles or who booked. Anyone who has the link can see it, so create a new link if it leaks (the old one stops working).</p>
+          <div class="inline">
+            <button type="button" id="display-create">Create new link</button>
+            <button type="button" id="display-off" class="secondary">Turn off</button>
+          </div>
+          <div id="display-link-box" class="inline" hidden>
+            <input id="display-link" type="text" readonly aria-label="Display link">
+            <button type="button" id="display-copy" class="secondary">Copy</button>
+          </div>
+          <p class="hint" id="display-once" hidden>Save this link now. It's only shown once.</p>
+        </section>
+
+        <section class="card wide">
           <h2 class="first">Recent activity</h2>
           <ul id="audit" class="list audit"></ul>
         </section>
@@ -128,8 +143,8 @@
   </main>
 
   <script src="vendor/supabase.js"></script>
-  <script src="config.js?v=202610212220"></script>
-  <script src="common.js?v=202610212220"></script>
-  <script src="admin.js?v=202610212220"></script>
+  <script src="config.js?v=202610212226"></script>
+  <script src="common.js?v=202610212226"></script>
+  <script src="admin.js?v=202610212226"></script>
 </body>
 </html>
